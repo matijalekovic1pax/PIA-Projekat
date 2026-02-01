@@ -1,0 +1,223 @@
+<div class="bg-gray-50 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
+
+        <!-- Tabs -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button (click)="setTab('users')" [class.border-primary-500]="activeTab === 'users'"
+                    [class.text-primary-600]="activeTab === 'users'"
+                    class="border-b-2 py-4 px-1 text-sm font-medium hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
+                    [class.border-transparent]="activeTab !== 'users'" [class.text-gray-500]="activeTab !== 'users'">
+                    User Management
+                </button>
+                <button (click)="setTab('spaces')" [class.border-primary-500]="activeTab === 'spaces'"
+                    [class.text-primary-600]="activeTab === 'spaces'"
+                    class="border-b-2 py-4 px-1 text-sm font-medium hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
+                    [class.border-transparent]="activeTab !== 'spaces'" [class.text-gray-500]="activeTab !== 'spaces'">
+                    Space Approvals
+                </button>
+                <button (click)="setTab('stats')" [class.border-primary-500]="activeTab === 'stats'"
+                    [class.text-primary-600]="activeTab === 'stats'"
+                    class="border-b-2 py-4 px-1 text-sm font-medium hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
+                    [class.border-transparent]="activeTab !== 'stats'" [class.text-gray-500]="activeTab !== 'stats'">
+                    Statistics
+                </button>
+            </nav>
+        </div>
+
+        <!-- Users Tab -->
+        <div *ngIf="activeTab === 'users'">
+            <div class="mb-4 flex flex-wrap items-center gap-4">
+                <select [(ngModel)]="statusFilter" (change)="loadUsers()"
+                    class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <button (click)="loadUsers()" class="text-primary-600 font-medium hover:underline">Refresh</button>
+            </div>
+
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr *ngFor="let user of users">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <img class="h-10 w-10 rounded-full object-cover"
+                                            [src]="'/uploads/' + (user.profilePicture || 'default.png')" alt="">
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{user.firstName}}
+                                            {{user.lastName}}</div>
+                                        <div class="text-sm text-gray-500">{{user.email}}</div>
+                                        <div class="text-xs text-gray-400">@{{user.username}}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{{user.type}}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span [class.bg-green-100]="user.status === 'active'"
+                                    [class.text-green-800]="user.status === 'active'"
+                                    [class.bg-yellow-100]="user.status === 'pending'"
+                                    [class.text-yellow-800]="user.status === 'pending'"
+                                    [class.bg-red-100]="user.status === 'rejected'"
+                                    [class.text-red-800]="user.status === 'rejected'"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                    {{user.status | titlecase}}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button *ngIf="user.status !== 'active'" (click)="updateStatus(user.id, 'active')"
+                                    class="text-green-600 hover:text-green-900">Approve</button>
+                                <button *ngIf="user.status !== 'rejected'" (click)="updateStatus(user.id, 'rejected')"
+                                    class="text-red-600 hover:text-red-900">Reject</button>
+                                <button (click)="startEdit(user)" class="text-blue-600 hover:text-blue-900">Edit</button>
+                                <button (click)="deleteUser(user.id)" class="text-gray-600 hover:text-gray-900">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div *ngIf="editingUser" class="mt-6 bg-white rounded-lg shadow p-6 max-w-3xl">
+                <h3 class="text-lg font-medium mb-4">Edit User</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">First Name</label>
+                        <input [(ngModel)]="editingUser.firstName"
+                            class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input [(ngModel)]="editingUser.lastName"
+                            class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input [(ngModel)]="editingUser.email"
+                            class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Phone</label>
+                        <input [(ngModel)]="editingUser.phone"
+                            class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                    </div>
+                    <div *ngIf="editingUser.type === 'manager'" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Company Name</label>
+                            <input [(ngModel)]="editingUser.companyName"
+                                class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Company Address</label>
+                            <input [(ngModel)]="editingUser.companyAddress"
+                                class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Reg. Number</label>
+                            <input [(ngModel)]="editingUser.companyRegNumber"
+                                class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Tax ID (PIB)</label>
+                            <input [(ngModel)]="editingUser.companyTaxId"
+                                class="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button (click)="cancelEdit()" class="px-4 py-2 border border-gray-300 rounded-md">Cancel</button>
+                    <button (click)="saveUser()" class="px-4 py-2 bg-primary-600 text-white rounded-md">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spaces Tab -->
+        <div *ngIf="activeTab === 'spaces'">
+            <div class="mb-4 flex items-center gap-4">
+                <select [(ngModel)]="spaceStatusFilter" (change)="loadSpaces()"
+                    class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <button (click)="loadSpaces()" class="text-primary-600 font-medium hover:underline">Refresh</button>
+            </div>
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Space</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                City</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Manager</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr *ngFor="let space of spaces">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{space.name}}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{space.city}}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{space.managerFirstName}} {{space.managerLastName}}
+                                <span *ngIf="!space.managerFirstName" class="text-xs text-gray-400">N/A</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                                {{space.status}}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button *ngIf="space.status !== 'active'" (click)="updateSpaceStatus(space.id, 'active')"
+                                    class="text-green-600 hover:text-green-900">Approve</button>
+                                <button *ngIf="space.status !== 'rejected'" (click)="updateSpaceStatus(space.id, 'rejected')"
+                                    class="text-red-600 hover:text-red-900">Reject</button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="spaces.length === 0">
+                            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No spaces found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div *ngIf="activeTab === 'stats'">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-medium mb-4">Popularity (Likes)</h3>
+                    <div class="h-72">
+                        <canvas #popularityChart></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-medium mb-4">Revenue by Space</h3>
+                    <div class="h-72">
+                        <canvas #revenueChart></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

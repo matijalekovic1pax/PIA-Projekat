@@ -1,0 +1,112 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <h1 class="text-3xl font-bold mb-8">Find a Workspace</h1>
+
+    <div class="bg-white shadow rounded-lg p-6 mb-8">
+        <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Name Search -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" formControlName="name"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                </div>
+
+                <!-- City Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Cities</label>
+                    <!-- Simple multiselect or just select for demo -->
+                    <select multiple formControlName="cities"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2 h-24">
+                        <option *ngFor="let city of cities" [value]="city">{{city}}</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Hold Ctrl to select multiple</p>
+                </div>
+            </div>
+
+            <!-- Validation Checkboxes -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Workspace Type</label>
+                <div class="flex space-x-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" [checked]="isTypeSelected('open')"
+                            (change)="onTypeChange('open', $event)"
+                            [disabled]="isAnyTypeSelected() && !isTypeSelected('open')"
+                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                        <label class="ml-2 block text-sm text-gray-900">Open Space</label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" [checked]="isTypeSelected('office')"
+                            (change)="onTypeChange('office', $event)"
+                            [disabled]="isAnyTypeSelected() && !isTypeSelected('office')"
+                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                        <label class="ml-2 block text-sm text-gray-900">Private Office</label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" [checked]="isTypeSelected('conference')"
+                            (change)="onTypeChange('conference', $event)"
+                            [disabled]="isAnyTypeSelected() && !isTypeSelected('conference')"
+                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                        <label class="ml-2 block text-sm text-gray-900">Conference Room (10-12p)</label>
+                    </div>
+                </div>
+                <p *ngIf="searchForm.get('workspaceType')?.touched && searchForm.get('workspaceType')?.invalid"
+                    class="text-xs text-red-500 mt-2">Select exactly one workspace type.</p>
+            </div>
+
+            <!-- Conditional Capacity Input -->
+            <div *ngIf="isTypeSelected('office')">
+                <label class="block text-sm font-medium text-gray-700">Office Capacity (People)</label>
+                <input type="number" formControlName="capacity"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2 max-w-xs">
+                <p *ngIf="searchForm.get('capacity')?.touched && searchForm.get('capacity')?.invalid"
+                    class="text-xs text-red-500 mt-2">Enter the required office capacity.</p>
+            </div>
+
+            <button type="submit"
+                [disabled]="searchForm.invalid"
+                class="w-full md:w-auto bg-primary-600 text-white rounded-md py-2 px-6 hover:bg-primary-500 transition disabled:opacity-50">Search</button>
+        </form>
+    </div>
+
+    <!-- Results -->
+    <div *ngIf="searchResults" class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Space</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        City</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Address</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let space of searchResults">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{space.name}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{space.city}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{space.address}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">\${{space.pricePerHour}}/h</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a [routerLink]="['/spaces', space.id]"
+                            class="text-primary-600 hover:text-primary-500">Details</a>
+                    </td>
+                </tr>
+                <tr *ngIf="searchResults.length === 0">
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                        No spaces found matching your criteria.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+

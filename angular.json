@@ -59,7 +59,8 @@
               "buildTarget": "coworking-client:build:production"
             },
             "development": {
-              "buildTarget": "coworking-client:build:development"
+              "buildTarget": "coworking-client:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

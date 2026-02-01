@@ -1,0 +1,113 @@
+<div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-8">
+    <h2 class="text-xl font-bold mb-4">Check Availability & Reserve</h2>
+
+    <form [formGroup]="reservationForm" (ngSubmit)="onSubmit()">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Date</label>
+                <input type="date" [min]="minDate" formControlName="date"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Start</label>
+                <input type="time" formControlName="startTime"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">End</label>
+                <input type="time" formControlName="endTime"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Type</label>
+                <select formControlName="type"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                    <option value="open">Open Space</option>
+                    <option value="office">Private Office</option>
+                    <option value="conference">Conference Room</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Availability Display -->
+        <div *ngIf="availability" class="mb-6">
+            <!-- Open Space -->
+            <div *ngIf="reservationForm.get('type')?.value === 'open'" class="p-4 bg-white rounded shadow-sm border"
+                [class.border-green-500]="availability.available" [class.border-red-500]="!availability.available">
+                <p class="font-medium" [class.text-green-600]="availability.available"
+                    [class.text-red-600]="!availability.available">
+                    {{ availability.available ? 'Available' : 'Sold Out' }}
+                </p>
+                <p *ngIf="availability.remaining" class="text-sm text-gray-500">{{ availability.remaining }} desks
+                    remaining</p>
+            </div>
+
+            <!-- Offices -->
+            <div *ngIf="reservationForm.get('type')?.value === 'office' && availability.offices"
+                class="grid grid-cols-2 gap-4">
+                <div *ngFor="let office of availability.offices" (click)="office.isAvailable && selectItem(office.name)"
+                    class="p-3 border rounded cursor-pointer transition"
+                    [class.bg-green-50]="office.isAvailable && reservationForm.get('itemId')?.value !== office.name"
+                    [class.bg-red-50]="!office.isAvailable" [class.border-green-500]="office.isAvailable"
+                    [class.border-red-500]="!office.isAvailable"
+                    [class.ring-2]="reservationForm.get('itemId')?.value === office.name"
+                    [class.ring-primary-500]="reservationForm.get('itemId')?.value === office.name">
+                    <div class="font-medium">{{office.name}}</div>
+                    <div class="text-xs text-gray-500">{{office.deskCount}} desks</div>
+                    <div class="text-xs font-bold mt-1" [class.text-green-600]="office.isAvailable"
+                        [class.text-red-600]="!office.isAvailable">
+                        {{ office.isAvailable ? 'Available' : 'Booked' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conference Rooms -->
+            <div *ngIf="reservationForm.get('type')?.value === 'conference' && availability.conferenceRooms"
+                class="grid grid-cols-2 gap-4">
+                <div *ngFor="let room of availability.conferenceRooms"
+                    (click)="room.isAvailable && selectItem(room.name)"
+                    class="p-3 border rounded cursor-pointer transition"
+                    [class.bg-green-50]="room.isAvailable && reservationForm.get('itemId')?.value !== room.name"
+                    [class.bg-red-50]="!room.isAvailable" [class.border-green-500]="room.isAvailable"
+                    [class.border-red-500]="!room.isAvailable"
+                    [class.ring-2]="reservationForm.get('itemId')?.value === room.name"
+                    [class.ring-primary-500]="reservationForm.get('itemId')?.value === room.name">
+                    <div class="font-medium">{{room.name}}</div>
+                    <div class="text-xs text-gray-500 truncate" title="{{room.equipment}}">{{room.equipment}}</div>
+                    <div class="text-xs font-bold mt-1" [class.text-green-600]="room.isAvailable"
+                        [class.text-red-600]="!room.isAvailable">
+                        {{ room.isAvailable ? 'Available' : 'Booked' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="timeError" class="mb-4 text-sm text-red-600">{{ timeError }}</div>
+
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3" *ngIf="reservationForm.get('type')?.value !== 'open'">
+                <button type="button" (click)="previousItem()"
+                    class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">
+                    Prev
+                </button>
+                <div class="text-sm font-medium text-gray-700">
+                    {{ reservationForm.get('itemId')?.value || 'Select a room' }}
+                </div>
+                <button type="button" (click)="nextItem()"
+                    class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">
+                    Next
+                </button>
+            </div>
+            <full-calendar #calendar [options]="calendarOptions"></full-calendar>
+        </div>
+
+        <div *ngIf="message" class="mb-4 text-center font-bold"
+            [class.text-green-600]="message.indexOf('confirmed') > -1"
+            [class.text-red-600]="message.indexOf('confirmed') === -1">{{message}}</div>
+
+        <button type="submit" [disabled]="reservationForm.invalid"
+            class="w-full bg-primary-600 text-white rounded-md py-3 font-semibold hover:bg-primary-500 disabled:opacity-50 transition">
+            Confirm Reservation
+        </button>
+    </form>
+</div>

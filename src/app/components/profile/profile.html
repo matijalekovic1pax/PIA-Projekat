@@ -1,0 +1,206 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="grid grid-cols-1 gap-10 lg:grid-cols-3">
+
+        <!-- Profile Edit Section -->
+        <div class="lg:col-span-1">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-6">My Profile</h2>
+
+                <div class="flex flex-col items-center mb-6">
+                    <img [src]="'/uploads/' + (user?.profilePicture || 'default.png')"
+                        class="h-32 w-32 rounded-full object-cover border-4 border-gray-200">
+                    <p class="mt-2 text-gray-500">@{{user?.username}}</p>
+                </div>
+
+                <form [formGroup]="profileForm" (ngSubmit)="onUpdate()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">First Name</label>
+                        <input type="text" formControlName="firstName"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input type="text" formControlName="lastName"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" formControlName="email"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Phone</label>
+                        <input type="text" formControlName="phone"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                    </div>
+
+                    <div class="border-t pt-4 mt-4">
+                        <h3 class="text-sm font-medium text-gray-900 mb-2">Change Password (Optional)</h3>
+                        <div class="space-y-3">
+                            <input type="password" formControlName="oldPassword" placeholder="Old Password"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                            <input type="password" formControlName="newPassword" placeholder="New Password"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <label class="block text-sm font-medium text-gray-700">Update Picture</label>
+                        <input type="file" (change)="onFileSelected($event)"
+                            class="mt-1 block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                        <p *ngIf="imageError" class="text-xs text-red-500 mt-1">{{ imageError }}</p>
+                    </div>
+
+                    <div *ngIf="user?.type === 'manager'" class="border-t pt-4 space-y-3">
+                        <h3 class="text-sm font-medium text-gray-900">Company Details</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Company Name</label>
+                            <input type="text" formControlName="companyName"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Company Address</label>
+                            <input type="text" formControlName="companyAddress"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Reg. Number</label>
+                            <input type="text" formControlName="companyRegNumber"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Tax ID (PIB)</label>
+                            <input type="text" formControlName="companyTaxId"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2">
+                        </div>
+                    </div>
+
+                    <div *ngIf="message" class="text-green-600 text-sm font-medium">{{message}}</div>
+
+                    <button type="submit" [disabled]="profileForm.invalid"
+                        class="w-full bg-primary-600 text-white rounded-md py-2 px-4 hover:bg-primary-500 transition">Save
+                        Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Member Reservations Section -->
+        <div class="lg:col-span-2" *ngIf="user?.type === 'member'">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-6">Reservation History</h2>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th (click)="sortReservations('spaceName')"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                    Space</th>
+                                <th (click)="sortReservations('spaceCity')"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                    City</th>
+                                <th (click)="sortReservations('startDateTime')"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                    From</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    To</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr *ngFor="let res of reservations">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{res.spaceName}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{res.spaceCity}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 block">
+                                    {{res.startDateTime | date:'short'}}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 block">
+                                    {{res.endDateTime | date:'short'}}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                        [class.bg-green-100]="res.status === 'active'"
+                                        [class.text-green-800]="res.status === 'active'"
+                                        [class.bg-blue-100]="res.status === 'confirmed'"
+                                        [class.text-blue-800]="res.status === 'confirmed'"
+                                        [class.bg-red-100]="res.status === 'cancelled'"
+                                        [class.text-red-800]="res.status === 'cancelled'"
+                                        [class.bg-gray-100]="res.status === 'completed'"
+                                        [class.text-gray-800]="res.status === 'completed'"
+                                        [class.bg-yellow-100]="res.status === 'no_show'"
+                                        [class.text-yellow-800]="res.status === 'no_show'">
+                                        {{res.status}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button *ngIf="res.status === 'active' && canCancel(res.startDateTime)"
+                                        (click)="cancelReservation(res.id)"
+                                        class="text-red-600 hover:text-red-900">Cancel</button>
+                                    <span *ngIf="res.status === 'active' && !canCancel(res.startDateTime)"
+                                        class="text-gray-400 text-xs italic">So close!</span>
+                                </td>
+                            </tr>
+                            <tr *ngIf="reservations.length === 0">
+                                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No reservations
+                                    found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manager Spaces Section -->
+        <div class="lg:col-span-2" *ngIf="user?.type === 'manager'">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-6">My Spaces</h2>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Space</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    City</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Open Space Desks</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Offices</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Conference Rooms</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr *ngFor="let space of managerSpaces">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{space.name}}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{space.city}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{space.openSpaceDeskCount}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{formatOffices(space.offices)}}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{formatConferenceRooms(space.conferenceRooms)}}
+                                </td>
+                            </tr>
+                            <tr *ngIf="managerSpaces.length === 0">
+                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No spaces found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
