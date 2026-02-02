@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SpaceService } from '../../services/space.service';
 import { CommonModule } from '@angular/common';
@@ -23,7 +23,8 @@ export class FeedbackComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private spaceService: SpaceService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {
     this.feedbackForm = this.fb.group({
       comment: ['', Validators.required],
@@ -68,9 +69,16 @@ export class FeedbackComponent implements OnInit {
           this.message = 'Review added!';
           this.space = updatedSpace; // Update local view (likes count etc)
           this.feedbackForm.reset();
-          setTimeout(() => this.message = '', 3000);
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.message = '';
+            this.cdr.detectChanges();
+          }, 3000);
         },
-        error: (err) => this.message = err.error?.message || 'Failed to add review'
+        error: (err) => {
+          this.message = err.error?.message || 'Failed to add review';
+          this.cdr.detectChanges();
+        }
       });
     }
   }

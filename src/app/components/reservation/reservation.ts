@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, ViewChild, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SpaceService } from '../../services/space.service';
 import { CommonModule } from '@angular/common';
@@ -6,6 +6,7 @@ import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-reservation',
@@ -13,7 +14,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
   imports: [CommonModule, ReactiveFormsModule, FullCalendarModule],
   templateUrl: './reservation.html'
 })
-export class ReservationComponent implements OnInit, OnChanges {
+export class ReservationComponent implements OnInit, OnChanges, OnDestroy {
   @Input() space: any;
   @ViewChild('calendar') calendar?: FullCalendarComponent;
   reservationForm: FormGroup;
@@ -22,6 +23,7 @@ export class ReservationComponent implements OnInit, OnChanges {
   minDate: string;
   timeError = '';
   currentItemIndex = 0;
+  private destroy$ = new Subject<void>();
   calendarOptions: CalendarOptions = {
     initialView: 'timeGridWeek',
     plugins: [dayGridPlugin, timeGridPlugin],
@@ -36,7 +38,11 @@ export class ReservationComponent implements OnInit, OnChanges {
     }
   };
 
-  constructor(private fb: FormBuilder, private spaceService: SpaceService) {
+  constructor(
+    private fb: FormBuilder,
+    private spaceService: SpaceService,
+    private cdr: ChangeDetectorRef
+  ) {
     this.minDate = new Date().toISOString().split('T')[0];
     this.reservationForm = this.fb.group({
       date: [this.minDate, Validators.required],
@@ -47,17 +53,27 @@ export class ReservationComponent implements OnInit, OnChanges {
     });
   }
 
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   ngOnInit() {
     if (this.space) {
       this.checkAvailability();
     }
 
-    this.reservationForm.valueChanges.subscribe(() => {
-      // Debounce or just check on change if valid
-      if (this.reservationForm.get('date')?.valid && this.reservationForm.get('type')?.valid) {
-        this.checkAvailability();
-      }
-    });
+    // Debounce form changes to avoid API spam
+    this.reservationForm.valueChanges
+      .pipe(
+        debounceTime(500),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        if (this.reservationForm.get('date')?.valid && this.reservationForm.get('type')?.valid) {
+          this.checkAvailability(false); // Don't refetch calendar on every change
+        }
+      });
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -66,7 +82,7 @@ export class ReservationComponent implements OnInit, OnChanges {
     }
   }
 
-  checkAvailability() {
+  checkAvailability(refetchCalendar = true) {
     const { date, type, startTime, endTime } = this.reservationForm.value;
     if (!date || !type || !this.space || !startTime || !endTime) return;
 
@@ -93,7 +109,11 @@ export class ReservationComponent implements OnInit, OnChanges {
           }
         }
         this.reservationForm.get('itemId')?.updateValueAndValidity({ emitEvent: false });
-        this.refetchCalendar();
+        this.cdr.detectChanges();
+        // Only refetch calendar when explicitly needed (e.g., after reservation or type change)
+        if (refetchCalendar) {
+          this.refetchCalendar();
+        }
       },
       error: (err) => console.error(err)
     });
@@ -125,11 +145,18 @@ export class ReservationComponent implements OnInit, OnChanges {
       this.spaceService.createReservation(data).subscribe({
         next: () => {
           this.message = 'Reservation confirmed!';
-          this.checkAvailability(); // Refresh
+          this.checkAvailability(true); // Refresh with calendar refetch
           this.availability = null;
-          setTimeout(() => this.message = '', 3000);
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.message = '';
+            this.cdr.detectChanges();
+          }, 3000);
         },
-        error: (err) => this.message = err.error?.message || 'Reservation failed'
+        error: (err) => {
+          this.message = err.error?.message || 'Reservation failed';
+          this.cdr.detectChanges();
+        }
       });
     }
   }

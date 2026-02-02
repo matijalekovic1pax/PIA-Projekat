@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { AdminService } from '../../services/admin.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -26,9 +26,10 @@ export class AdminDashboardComponent implements OnInit {
   editingUser: any | null = null;
   message = '';
 
-  constructor(private adminService: AdminService) { }
+  constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
+    console.log('[AdminDashboard] ngOnInit called');
     this.loadUsers();
     this.loadSpaces();
     this.loadStats();
@@ -45,33 +46,45 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   loadUsers() {
+    console.log('[AdminDashboard] loadUsers called, filter:', this.statusFilter);
     this.loading = true;
     this.adminService.getUsers(this.statusFilter).subscribe({
       next: (data) => {
+        console.log('[AdminDashboard] Users received:', data.length);
         this.users = data;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error(err);
+        console.error('[AdminDashboard] Error loading users:', err);
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
 
   loadSpaces() {
+    console.log('[AdminDashboard] loadSpaces called, filter:', this.spaceStatusFilter);
     this.adminService.getSpaces(this.spaceStatusFilter).subscribe({
-      next: (data) => this.spaces = data,
-      error: (err) => console.error(err)
+      next: (data) => {
+        console.log('[AdminDashboard] Spaces received:', data.length);
+        this.spaces = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('[AdminDashboard] Error loading spaces:', err)
     });
   }
 
   loadStats() {
+    console.log('[AdminDashboard] loadStats called');
     this.adminService.getStats().subscribe({
       next: (data) => {
+        console.log('[AdminDashboard] Stats received:', data);
         this.stats = data;
+        this.cdr.detectChanges();
         setTimeout(() => this.renderCharts(), 0);
       },
-      error: (err) => console.error(err)
+      error: (err) => console.error('[AdminDashboard] Error loading stats:', err)
     });
   }
 

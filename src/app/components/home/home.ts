@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SpaceService } from '../../services/space.service';
@@ -22,7 +22,8 @@ export class HomeComponent implements OnInit {
   constructor(
     private spaceService: SpaceService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.searchForm = this.fb.group({
       name: [''],
@@ -31,26 +32,45 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit() {
+    console.log('[Home] ngOnInit called');
     this.loadTopSpaces();
     this.loadCities();
     this.loadSummary();
   }
 
   loadTopSpaces() {
-    this.spaceService.getTopSpaces().subscribe(spaces => {
-      this.topSpaces = spaces;
+    console.log('[Home] loadTopSpaces called');
+    this.spaceService.getTopSpaces().subscribe({
+      next: (spaces) => {
+        console.log('[Home] Top spaces received:', spaces.length);
+        this.topSpaces = spaces;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('[Home] Error loading top spaces:', err)
     });
   }
 
   loadCities() {
-    this.spaceService.getAllCities().subscribe(cities => {
-      this.cities = cities;
+    console.log('[Home] loadCities called');
+    this.spaceService.getAllCities().subscribe({
+      next: (cities) => {
+        console.log('[Home] Cities received:', cities.length, cities);
+        this.cities = cities;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('[Home] Error loading cities:', err)
     });
   }
 
   loadSummary() {
-    this.spaceService.getSpaceSummary().subscribe(summary => {
-      this.totalSpaces = summary.totalSpaces || 0;
+    console.log('[Home] loadSummary called');
+    this.spaceService.getSpaceSummary().subscribe({
+      next: (summary) => {
+        console.log('[Home] Summary received:', summary);
+        this.totalSpaces = summary.totalSpaces || 0;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('[Home] Error loading summary:', err)
     });
   }
 
@@ -71,6 +91,7 @@ export class HomeComponent implements OnInit {
     this.spaceService.searchSpaces(name, cities).subscribe(results => {
       this.searchResults = results;
       this.sortResults();
+      this.cdr.detectChanges();
     });
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { SpaceService } from '../../services/space.service';
 import { CommonModule } from '@angular/common';
@@ -23,7 +23,8 @@ export class SpaceDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private spaceService: SpaceService,
     private sanitizer: DomSanitizer,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -42,6 +43,8 @@ export class SpaceDetailsComponent implements OnInit {
         if (savedImage && (this.space.galleryImages.includes(savedImage) || savedImage === this.space.mainImage)) {
           this.selectedImage = savedImage;
         }
+
+        this.cdr.detectChanges();
       });
     }
   }

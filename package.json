@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "tailwind": "npx @tailwindcss/cli -i ./src/styles.input.css -o ./src/styles.css",
+    "tailwind:watch": "npx @tailwindcss/cli -i ./src/styles.input.css -o ./src/styles.css --watch",
+    "start": "npm run tailwind && ng serve --proxy-config proxy.conf.json",
+    "build": "npm run tailwind && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -44,6 +46,7 @@
     "@angular/build": "^21.1.2",
     "@angular/cli": "^21.1.2",
     "@angular/compiler-cli": "^21.1.0",
+    "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.24",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.6",
