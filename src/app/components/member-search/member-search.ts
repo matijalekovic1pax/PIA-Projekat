@@ -19,13 +19,15 @@ export class MemberSearchComponent implements OnInit {
     this.searchForm = this.fb.group({
       name: [''],
       cities: [[]],
-      workspaceType: ['', Validators.required], // 'open', 'office', 'conference'
+      workspaceType: [''], // 'open', 'office', 'conference' - optional
       capacity: [''] // visible only if office
     });
   }
 
   ngOnInit() {
     this.spaceService.getAllCities().subscribe(cities => this.cities = cities);
+    // Load initial results - show all spaces
+    this.onSearch();
   }
 
   onTypeChange(type: string, event: any) {
@@ -33,20 +35,11 @@ export class MemberSearchComponent implements OnInit {
       this.searchForm.patchValue({ workspaceType: type });
       if (type !== 'office') {
         this.searchForm.patchValue({ capacity: '' });
-        this.searchForm.get('capacity')?.clearValidators();
-      }
-      if (type === 'office') {
-        this.searchForm.get('capacity')?.setValidators([Validators.required, Validators.min(1)]);
       }
     } else {
-      // If unchecking the active one, clear it? Or just behave like radio?
-      // "The member selects exactly one checkbox; when one is confirmed, the other two are disabled."
-      // This implies radio button UI behavior but using checkboxes visually? Or actual disabling.
-      // Let's implement logic: clear if uncheck.
       this.searchForm.patchValue({ workspaceType: '' });
+      this.searchForm.patchValue({ capacity: '' });
     }
-
-    this.searchForm.get('capacity')?.updateValueAndValidity();
   }
 
   isTypeSelected(type: string): boolean {
@@ -64,5 +57,15 @@ export class MemberSearchComponent implements OnInit {
       next: (results) => this.searchResults = results,
       error: (err) => console.error(err)
     });
+  }
+
+  clearFilters() {
+    this.searchForm.reset({
+      name: '',
+      cities: [],
+      workspaceType: '',
+      capacity: ''
+    });
+    this.onSearch();
   }
 }

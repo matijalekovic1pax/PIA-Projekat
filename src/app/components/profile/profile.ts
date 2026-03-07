@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
@@ -18,15 +18,22 @@ export class ProfileComponent implements OnInit {
   managerSpaces: any[] = [];
   selectedFile: File | null = null;
   message: string = '';
+  messageType: 'success' | 'error' = 'success';
   imageError: string = '';
   sortField: string = 'startDateTime';
   sortDirection: 'asc' | 'desc' = 'desc';
+
+  // Edit mode state
+  isEditing = false;
+  editingPassword = false;
+  previewImage: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
     private authService: AuthService,
-    private spaceService: SpaceService
+    private spaceService: SpaceService,
+    private cdr: ChangeDetectorRef
   ) {
     this.profileForm = this.fb.group({
       firstName: ['', Validators.required],
@@ -52,32 +59,93 @@ export class ProfileComponent implements OnInit {
       next: (data) => {
         this.user = data.user;
         this.reservations = data.reservations;
+
+        // Populate form with loaded data
         this.profileForm.patchValue({
-          firstName: this.user.firstName,
-          lastName: this.user.lastName,
-          email: this.user.email,
-          phone: this.user.phone,
-          companyName: this.user.companyName,
-          companyAddress: this.user.companyAddress,
-          companyRegNumber: this.user.companyRegNumber,
-          companyTaxId: this.user.companyTaxId
+          firstName: this.user.firstName || '',
+          lastName: this.user.lastName || '',
+          email: this.user.email || '',
+          phone: this.user.phone || '',
+          companyName: this.user.companyName || '',
+          companyAddress: this.user.companyAddress || '',
+          companyRegNumber: this.user.companyRegNumber || '',
+          companyTaxId: this.user.companyTaxId || '',
+          oldPassword: '',
+          newPassword: ''
         });
 
         if (this.user?.type === 'manager') {
           this.spaceService.getManagerSpaces().subscribe({
-            next: (spaces) => this.managerSpaces = spaces,
+            next: (spaces) => {
+              this.managerSpaces = spaces;
+              this.cdr.detectChanges();
+            },
             error: (err) => console.error(err)
           });
         }
+        this.cdr.detectChanges();
       },
       error: (err) => console.error(err)
     });
+  }
+
+  resetForm() {
+    this.profileForm.patchValue({
+      firstName: this.user?.firstName || '',
+      lastName: this.user?.lastName || '',
+      email: this.user?.email || '',
+      phone: this.user?.phone || '',
+      companyName: this.user?.companyName || '',
+      companyAddress: this.user?.companyAddress || '',
+      companyRegNumber: this.user?.companyRegNumber || '',
+      companyTaxId: this.user?.companyTaxId || '',
+      oldPassword: '',
+      newPassword: ''
+    });
+    this.selectedFile = null;
+    this.previewImage = null;
+    this.imageError = '';
+  }
+
+  startEditing() {
+    this.isEditing = true;
+    this.editingPassword = false;
+    // Populate form with current user data
+    if (this.user) {
+      this.profileForm.patchValue({
+        firstName: this.user.firstName || '',
+        lastName: this.user.lastName || '',
+        email: this.user.email || '',
+        phone: this.user.phone || '',
+        companyName: this.user.companyName || '',
+        companyAddress: this.user.companyAddress || '',
+        companyRegNumber: this.user.companyRegNumber || '',
+        companyTaxId: this.user.companyTaxId || ''
+      });
+    }
+    this.cdr.detectChanges();
+  }
+
+  cancelEditing() {
+    this.isEditing = false;
+    this.editingPassword = false;
+    // Reset form to original values
+    this.resetForm();
+    this.cdr.detectChanges();
+  }
+
+  togglePasswordEdit() {
+    this.editingPassword = !this.editingPassword;
+    if (!this.editingPassword) {
+      this.profileForm.patchValue({ oldPassword: '', newPassword: '' });
+    }
   }
 
   onFileSelected(event: any) {
     this.imageError = '';
     if (!event.target.files.length) {
       this.selectedFile = null;
+      this.previewImage = null;
       return;
     }
 
@@ -86,6 +154,7 @@ export class ProfileComponent implements OnInit {
     if (!validTypes.includes(file.type)) {
       this.imageError = 'Profile picture must be a JPG or PNG file.';
       this.selectedFile = null;
+      this.previewImage = null;
       return;
     }
 
@@ -96,13 +165,18 @@ export class ProfileComponent implements OnInit {
       if (width < 100 || height < 100 || width > 300 || height > 300) {
         this.imageError = 'Image dimensions must be between 100x100 and 300x300 pixels.';
         this.selectedFile = null;
+        this.previewImage = null;
       } else {
         this.selectedFile = file;
+        this.previewImage = URL.createObjectURL(file);
       }
+      this.cdr.detectChanges();
     };
     img.onerror = () => {
       this.imageError = 'Unable to read the selected image.';
       this.selectedFile = null;
+      this.previewImage = null;
+      this.cdr.detectChanges();
     };
     img.src = URL.createObjectURL(file);
   }
@@ -123,25 +197,43 @@ export class ProfileComponent implements OnInit {
         next: (user) => {
           this.user = user;
           this.authService.setCurrentUser(user);
-          this.message = 'Profile updated successfully';
-          this.profileForm.patchValue({ oldPassword: '', newPassword: '' });
-          this.selectedFile = null;
-          setTimeout(() => this.message = '', 3000);
+          this.message = 'Profile updated successfully!';
+          this.messageType = 'success';
+          this.isEditing = false;
+          this.editingPassword = false;
+          this.resetForm();
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.message = '';
+            this.cdr.detectChanges();
+          }, 3000);
         },
-        error: (err) => this.message = err.error?.message || 'Update failed'
+        error: (err) => {
+          this.message = err.error?.message || 'Update failed';
+          this.messageType = 'error';
+          this.cdr.detectChanges();
+        }
       });
     }
   }
 
   cancelReservation(id: string) {
-    if (confirm('Are you sure?')) {
+    if (confirm('Are you sure you want to cancel this reservation?')) {
       this.userService.cancelReservation(id).subscribe({
         next: () => {
           this.loadData();
           this.message = 'Reservation cancelled';
-          setTimeout(() => this.message = '', 3000);
+          this.messageType = 'success';
+          setTimeout(() => {
+            this.message = '';
+            this.cdr.detectChanges();
+          }, 3000);
         },
-        error: (err) => alert(err.error?.message || 'Cancel failed')
+        error: (err) => {
+          this.message = err.error?.message || 'Cancel failed';
+          this.messageType = 'error';
+          this.cdr.detectChanges();
+        }
       });
     }
   }
@@ -181,5 +273,15 @@ export class ProfileComponent implements OnInit {
   formatConferenceRooms(rooms: any[] | null | undefined): string {
     if (!rooms || rooms.length === 0) return 'None';
     return rooms.map(room => room.name).join(', ');
+  }
+
+  getProfileImage(): string {
+    if (this.previewImage) return this.previewImage;
+    return '/uploads/' + (this.user?.profilePicture || 'default.png');
+  }
+
+  getUserTypeLabel(): string {
+    if (!this.user?.type) return '';
+    return this.user.type.charAt(0).toUpperCase() + this.user.type.slice(1);
   }
 }

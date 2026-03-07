@@ -23,90 +23,117 @@
                 </div>
             </div>
 
-            <!-- Validation Checkboxes -->
+            <!-- Workspace Type Selection -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Workspace Type</label>
-                <div class="flex space-x-6">
-                    <div class="flex items-center">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Workspace Type (Optional)</label>
+                <div class="flex flex-wrap gap-4">
+                    <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer transition"
+                           [class.border-blue-600]="isTypeSelected('open')"
+                           [class.bg-blue-50]="isTypeSelected('open')"
+                           [class.border-gray-300]="!isTypeSelected('open')">
                         <input type="checkbox" [checked]="isTypeSelected('open')"
                             (change)="onTypeChange('open', $event)"
                             [disabled]="isAnyTypeSelected() && !isTypeSelected('open')"
-                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
-                        <label class="ml-2 block text-sm text-gray-900">Open Space</label>
-                    </div>
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <span class="ml-2 text-sm font-medium"
+                              [class.text-blue-700]="isTypeSelected('open')"
+                              [class.text-gray-700]="!isTypeSelected('open')">Open Space</span>
+                    </label>
 
-                    <div class="flex items-center">
+                    <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer transition"
+                           [class.border-blue-600]="isTypeSelected('office')"
+                           [class.bg-blue-50]="isTypeSelected('office')"
+                           [class.border-gray-300]="!isTypeSelected('office')">
                         <input type="checkbox" [checked]="isTypeSelected('office')"
                             (change)="onTypeChange('office', $event)"
                             [disabled]="isAnyTypeSelected() && !isTypeSelected('office')"
-                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
-                        <label class="ml-2 block text-sm text-gray-900">Private Office</label>
-                    </div>
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <span class="ml-2 text-sm font-medium"
+                              [class.text-blue-700]="isTypeSelected('office')"
+                              [class.text-gray-700]="!isTypeSelected('office')">Private Office</span>
+                    </label>
 
-                    <div class="flex items-center">
+                    <label class="flex items-center px-4 py-2 border rounded-lg cursor-pointer transition"
+                           [class.border-blue-600]="isTypeSelected('conference')"
+                           [class.bg-blue-50]="isTypeSelected('conference')"
+                           [class.border-gray-300]="!isTypeSelected('conference')">
                         <input type="checkbox" [checked]="isTypeSelected('conference')"
                             (change)="onTypeChange('conference', $event)"
                             [disabled]="isAnyTypeSelected() && !isTypeSelected('conference')"
-                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
-                        <label class="ml-2 block text-sm text-gray-900">Conference Room (10-12p)</label>
-                    </div>
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <span class="ml-2 text-sm font-medium"
+                              [class.text-blue-700]="isTypeSelected('conference')"
+                              [class.text-gray-700]="!isTypeSelected('conference')">Conference Room (10-12p)</span>
+                    </label>
                 </div>
-                <p *ngIf="searchForm.get('workspaceType')?.touched && searchForm.get('workspaceType')?.invalid"
-                    class="text-xs text-red-500 mt-2">Select exactly one workspace type.</p>
+                <p class="text-xs text-gray-500 mt-2">Select one type to filter by workspace type, or leave empty to see all types</p>
             </div>
 
             <!-- Conditional Capacity Input -->
             <div *ngIf="isTypeSelected('office')">
                 <label class="block text-sm font-medium text-gray-700">Office Capacity (People)</label>
-                <input type="number" formControlName="capacity"
+                <input type="number" formControlName="capacity" min="1"
+                    placeholder="Minimum number of desks"
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 border px-3 py-2 max-w-xs">
-                <p *ngIf="searchForm.get('capacity')?.touched && searchForm.get('capacity')?.invalid"
-                    class="text-xs text-red-500 mt-2">Enter the required office capacity.</p>
+                <p class="text-xs text-gray-500 mt-1">Optional: Filter offices by minimum desk count</p>
             </div>
 
-            <button type="submit"
-                [disabled]="searchForm.invalid"
-                class="w-full md:w-auto bg-primary-600 text-white rounded-md py-2 px-6 hover:bg-primary-500 transition disabled:opacity-50">Search</button>
+            <div class="flex gap-4">
+                <button type="submit"
+                    class="flex-1 md:flex-none bg-blue-600 text-white rounded-md py-2 px-6 hover:bg-blue-700 transition">
+                    Search
+                </button>
+                <button type="button" (click)="clearFilters()"
+                    class="flex-1 md:flex-none bg-gray-200 text-gray-700 rounded-md py-2 px-6 hover:bg-gray-300 transition">
+                    Clear Filters
+                </button>
+            </div>
         </form>
     </div>
 
     <!-- Results -->
-    <div *ngIf="searchResults" class="bg-white rounded-lg shadow overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Space</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        City</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Address</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                <tr *ngFor="let space of searchResults">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {{space.name}}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{space.city}}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{space.address}}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">\${{space.pricePerHour}}/h</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <a [routerLink]="['/spaces', space.id]"
-                            class="text-primary-600 hover:text-primary-500">Details</a>
-                    </td>
-                </tr>
-                <tr *ngIf="searchResults.length === 0">
-                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-                        No spaces found matching your criteria.
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <div *ngIf="searchResults !== null">
+        <h2 class="text-2xl font-bold mb-4">Search Results</h2>
+
+        <div *ngIf="searchResults.length === 0" class="bg-white rounded-lg shadow p-8 text-center">
+            <p class="text-gray-500">No spaces found matching your criteria.</p>
+        </div>
+
+        <div *ngIf="searchResults.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div *ngFor="let space of searchResults" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                <div class="relative h-48 bg-gray-200">
+                    <img [src]="space.mainImage || 'http://localhost:8080/uploads/spaces/default-space.jpg'"
+                         [alt]="space.name"
+                         class="w-full h-full object-cover">
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{space.name}}</h3>
+                    <div class="flex items-center text-sm text-gray-600 mb-2">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {{space.city}}
+                    </div>
+                    <p class="text-sm text-gray-500 mb-3">{{space.address}}</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <span class="text-sm text-gray-600">{{space.likes || 0}} likes</span>
+                        </div>
+                        <span class="text-lg font-bold text-blue-600">${{space.pricePerHour}}/h</span>
+                    </div>
+                    <a [routerLink]="['/spaces', space.id]"
+                       class="mt-4 block w-full text-center bg-blue-600 text-white rounded-md py-2 hover:bg-blue-700 transition">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

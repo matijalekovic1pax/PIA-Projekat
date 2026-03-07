@@ -27,11 +27,17 @@ export class ForgotPasswordComponent {
     this.authService.requestPasswordReset(this.form.value).subscribe({
       next: (res) => {
         this.message = res.message || 'If the account exists, a reset link was sent.';
-        this.resetLink = res.resetLink || null;
+        // Remove leading slash if present to make it work with Angular routing
+        this.resetLink = res.resetLink ? res.resetLink.replace(/^\//, '') : null;
       },
       error: (err) => {
         this.message = err.error?.message || 'Unable to process reset request.';
       }
     });
+  }
+
+  getFullResetLink(): string {
+    if (!this.resetLink) return '';
+    return window.location.origin + '/' + this.resetLink;
   }
 }
