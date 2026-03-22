@@ -23,7 +23,7 @@ public class AuthController {
             @RequestParam String firstName,
             @RequestParam String lastName,
             @RequestParam String email,
-            @RequestParam String phone,
+            @RequestParam(required = false) String phone,
             @RequestParam(defaultValue = "member") String type,
             @RequestParam(required = false) String companyName,
             @RequestParam(required = false) String companyAddress,

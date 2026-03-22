@@ -786,4 +786,12 @@ public class SpaceService {
         if (s == null) return "";
         return s.length() > max ? s.substring(0, max) : s;
     }
+
+    private String saveFile(MultipartFile file, String subfolder) throws IOException {
+        Path dir = Paths.get(uploadDir, subfolder);
+        Files.createDirectories(dir);
+        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Files.write(dir.resolve(filename), file.getBytes());
+        return filename;
+    }
 }
